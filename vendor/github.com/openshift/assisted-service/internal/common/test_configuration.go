@@ -19,7 +19,9 @@ type TestNetworking struct {
 	ClusterNetworks []*models.ClusterNetwork
 	ServiceNetworks []*models.ServiceNetwork
 	MachineNetworks []*models.MachineNetwork
+	APIVip          string
 	APIVips         []*models.APIVip
+	IngressVip      string
 	IngressVips     []*models.IngressVip
 }
 
@@ -248,7 +250,9 @@ var TestIPv4Networking = TestNetworking{
 	ClusterNetworks: []*models.ClusterNetwork{{Cidr: "1.3.0.0/16", HostPrefix: 24}},
 	ServiceNetworks: []*models.ServiceNetwork{{Cidr: "1.2.5.0/24"}},
 	MachineNetworks: []*models.MachineNetwork{{Cidr: "1.2.3.0/24"}},
+	APIVip:          "1.2.3.5",
 	APIVips:         []*models.APIVip{{IP: "1.2.3.5", Verification: VipVerificationPtr(models.VipVerificationSucceeded)}},
+	IngressVip:      "1.2.3.6",
 	IngressVips:     []*models.IngressVip{{IP: "1.2.3.6", Verification: VipVerificationPtr(models.VipVerificationSucceeded)}},
 }
 
@@ -259,7 +263,9 @@ var TestIPv6Networking = TestNetworking{
 	ClusterNetworks: []*models.ClusterNetwork{{Cidr: "1003:db8::/53", HostPrefix: 64}},
 	ServiceNetworks: []*models.ServiceNetwork{{Cidr: "1002:db8::/119"}},
 	MachineNetworks: []*models.MachineNetwork{{Cidr: "1001:db8::/120"}},
+	APIVip:          "1001:db8::64",
 	APIVips:         []*models.APIVip{{IP: "1001:db8::64", Verification: VipVerificationPtr(models.VipVerificationSucceeded)}},
+	IngressVip:      "1001:db8::65",
 	IngressVips:     []*models.IngressVip{{IP: "1001:db8::65", Verification: VipVerificationPtr(models.VipVerificationSucceeded)}},
 }
 
@@ -267,7 +273,9 @@ var TestEquivalentIPv6Networking = TestNetworking{
 	ClusterNetworks: []*models.ClusterNetwork{{Cidr: "1003:0db8:0::/53", HostPrefix: 64}},
 	ServiceNetworks: []*models.ServiceNetwork{{Cidr: "1002:0db8:0::/119"}},
 	MachineNetworks: []*models.MachineNetwork{{Cidr: "1001:0db8:0::/120"}},
+	APIVip:          "1001:0db8:0::64",
 	APIVips:         []*models.APIVip{{IP: "1001:db8::64"}},
+	IngressVip:      "1001:0db8:0::65",
 	IngressVips:     []*models.IngressVip{{IP: "1001:db8::65"}},
 }
 
@@ -275,7 +283,9 @@ var TestDualStackNetworking = TestNetworking{
 	ClusterNetworks: append(TestIPv4Networking.ClusterNetworks, TestIPv6Networking.ClusterNetworks...),
 	ServiceNetworks: append(TestIPv4Networking.ServiceNetworks, TestIPv6Networking.ServiceNetworks...),
 	MachineNetworks: append(TestIPv4Networking.MachineNetworks, TestIPv6Networking.MachineNetworks...),
+	APIVip:          TestIPv4Networking.APIVip,
 	APIVips:         TestIPv4Networking.APIVips,
+	IngressVip:      TestIPv4Networking.IngressVip,
 	IngressVips:     TestIPv4Networking.IngressVips,
 }
 
@@ -408,6 +418,33 @@ func GenerateTestIPv6Inventory() string {
 		},
 		Disks: []*models.Disk{
 			TestDefaultConfig.Disks,
+		},
+		Routes: TestDefaultRouteConfiguration,
+	}
+
+	b, err := json.Marshal(inventory)
+	Expect(err).To(Not(HaveOccurred()))
+	return string(b)
+}
+
+func GenerateTestDefaultVmwareInventory() string {
+	inventory := &models.Inventory{
+		Interfaces: []*models.Interface{
+			{
+				Name: "eth0",
+				IPV4Addresses: []string{
+					"1.2.3.4/24",
+				},
+				IPV6Addresses: []string{
+					"1001:db8::10/120",
+				},
+			},
+		},
+		Disks: []*models.Disk{
+			TestDefaultConfig.Disks,
+		},
+		SystemVendor: &models.SystemVendor{
+			Manufacturer: "vmware",
 		},
 		Routes: TestDefaultRouteConfiguration,
 	}

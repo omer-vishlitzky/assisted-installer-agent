@@ -2038,13 +2038,6 @@ func init() {
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "boolean",
-            "default": false,
-            "description": "Include system generated manifests in results? Default is false.",
-            "name": "include_system_generated",
-            "in": "query"
           }
         ],
         "responses": {
@@ -2640,80 +2633,6 @@ func init() {
         }
       }
     },
-    "/v2/clusters/{cluster_id}/progress": {
-      "put": {
-        "security": [
-          {
-            "agentAuth": []
-          }
-        ],
-        "description": "Update installation finalizing progress.",
-        "tags": [
-          "installer"
-        ],
-        "operationId": "v2UpdateClusterFinalizingProgress",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "uuid",
-            "description": "The cluster being updated.",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "description": "New progress value.",
-            "name": "finalizing-progress",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/cluster-finalizing-progress"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Update install progress."
-          },
-          "401": {
-            "description": "Unauthorized.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "404": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "405": {
-            "description": "Method Not Allowed.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "500": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "503": {
-            "description": "Unavailable.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
-    },
     "/v2/clusters/{cluster_id}/supported-platforms": {
       "get": {
         "security": [
@@ -3214,88 +3133,6 @@ func init() {
           },
           "500": {
             "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      },
-      "post": {
-        "security": [
-          {
-            "agentAuth": []
-          }
-        ],
-        "description": "Add new assisted installer event.",
-        "tags": [
-          "events"
-        ],
-        "operationId": "v2TriggerEvent",
-        "parameters": [
-          {
-            "description": "The event to be created.",
-            "name": "trigger-event-params",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/event"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Success."
-          },
-          "400": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "401": {
-            "description": "Unauthorized.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "404": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "405": {
-            "description": "Method Not Allowed.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "409": {
-            "description": "Cluster cannot accept new agents due to its current state.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "500": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "501": {
-            "description": "Not implemented.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "503": {
-            "description": "Unavailable.",
             "schema": {
               "$ref": "#/definitions/error"
             }
@@ -5807,17 +5644,11 @@ func init() {
               "none",
               "nutanix",
               "vsphere",
-              "external"
+              "oci"
             ],
             "type": "string",
             "description": "The provider platform type.",
             "name": "platform_type",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "description": "External platform name when platform type is set to external. The value of this parameter will be ignored if platform_type is not external.",
-            "name": "external_platform_name",
             "in": "query"
           }
         ],
@@ -5986,19 +5817,6 @@ func init() {
         }
       }
     },
-    "api_vip_connectivity_additional_request_header": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "description": "Value of the header's key when making a request",
-          "type": "string"
-        },
-        "value": {
-          "description": "The value corresponding to the header key",
-          "type": "string"
-        }
-      }
-    },
     "api_vip_connectivity_request": {
       "type": "object",
       "required": [
@@ -6011,18 +5829,9 @@ func init() {
           "x-nullable": true
         },
         "ignition_endpoint_token": {
-          "description": "A string which will be used as Authorization Bearer token to fetch the ignition from ignition_endpoint_url (DEPRECATED use request_headers to pass this token).",
+          "description": "A string which will be used as Authorization Bearer token to fetch the ignition from ignition_endpoint_url.",
           "type": "string",
           "x-nullable": true
-        },
-        "request_headers": {
-          "description": "Additional request headers to include when fetching the ignition from ignition_endpoint_url.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/api_vip_connectivity_additional_request_header"
-          },
-          "x-nullable": true,
-          "x-omitempty": true
         },
         "url": {
           "description": "URL address of the API.",
@@ -6080,9 +5889,6 @@ func init() {
     "boot": {
       "type": "object",
       "properties": {
-        "command_line": {
-          "type": "string"
-        },
         "current_boot_mode": {
           "type": "string"
         },
@@ -6110,6 +5916,11 @@ func init() {
           "description": "Unique identifier of the AMS subscription in OCM.",
           "type": "string",
           "format": "uuid"
+        },
+        "api_vip": {
+          "description": "(DEPRECATED) The virtual IP used to reach the OpenShift cluster's API.",
+          "type": "string",
+          "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$"
         },
         "api_vip_dns_name": {
           "description": "The domain name used to reach the OpenShift cluster API.",
@@ -6302,6 +6113,11 @@ func init() {
           "type": "boolean",
           "default": false
         },
+        "ingress_vip": {
+          "description": "(DEPRECATED) The virtual IP used for cluster ingress traffic.",
+          "type": "string",
+          "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$"
+        },
         "ingress_vips": {
           "description": "The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
           "type": "array",
@@ -6341,9 +6157,6 @@ func init() {
             "Cluster",
             "AddHostsCluster"
           ]
-        },
-        "last-installation-preparation": {
-          "$ref": "#/definitions/last-installation-preparation"
         },
         "logs_info": {
           "description": "The progress of log collection or empty if logs are not applicable",
@@ -6403,10 +6216,6 @@ func init() {
         },
         "org_id": {
           "type": "string"
-        },
-        "org_soft_timeouts_enabled": {
-          "description": "Indication if organization soft timeouts is enabled for the cluster.",
-          "type": "boolean"
         },
         "platform": {
           "$ref": "#/definitions/platform"
@@ -6539,6 +6348,11 @@ func init() {
           "type": "string",
           "x-nullable": true
         },
+        "api_vip": {
+          "description": "(DEPRECATED) The virtual IP used to reach the OpenShift cluster's API.",
+          "type": "string",
+          "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$"
+        },
         "api_vips": {
           "description": "The virtual IPs used to reach the OpenShift cluster's API. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
           "type": "array",
@@ -6622,6 +6436,11 @@ func init() {
         "ignition_endpoint": {
           "description": "Explicit ignition endpoint overrides the default ignition endpoint.",
           "$ref": "#/definitions/ignition-endpoint"
+        },
+        "ingress_vip": {
+          "description": "(DEPRECATED) The virtual IP used for cluster ingress traffic.",
+          "type": "string",
+          "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$"
         },
         "ingress_vips": {
           "description": "The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
@@ -6723,14 +6542,6 @@ func init() {
         }
       }
     },
-    "cluster-finalizing-progress": {
-      "type": "object",
-      "properties": {
-        "finalizing_stage": {
-          "$ref": "#/definitions/finalizing-stage"
-        }
-      }
-    },
     "cluster-host-requirements": {
       "type": "object",
       "properties": {
@@ -6808,19 +6619,8 @@ func init() {
     "cluster-progress-info": {
       "type": "object",
       "properties": {
-        "finalizing_stage": {
-          "$ref": "#/definitions/finalizing-stage"
-        },
         "finalizing_stage_percentage": {
           "type": "integer"
-        },
-        "finalizing_stage_started_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
-        },
-        "finalizing_stage_timed_out": {
-          "type": "boolean"
         },
         "installing_stage_percentage": {
           "type": "integer"
@@ -7679,23 +7479,7 @@ func init() {
         "FULL_ISO",
         "EXTERNAL_PLATFORM_OCI",
         "DUAL_STACK",
-        "PLATFORM_MANAGED_NETWORKING",
-        "SKIP_MCO_REBOOT",
-        "EXTERNAL_PLATFORM",
-        "OVN_NETWORK_TYPE",
-        "SDN_NETWORK_TYPE"
-      ]
-    },
-    "finalizing-stage": {
-      "description": "Cluster finalizing stage managed by controller",
-      "type": "string",
-      "enum": [
-        "Waiting for cluster operators",
-        "Adding router ca",
-        "Applying olm manifests",
-        "Waiting for olm operators csv initialization",
-        "Waiting for olm operators csv",
-        "Done"
+        "PLATFORM_MANAGED_NETWORKING"
       ]
     },
     "free-addresses-list": {
@@ -7789,10 +7573,6 @@ func init() {
           "format": "uuid",
           "x-go-custom-tag": "gorm:\"foreignkey:Cluster\"",
           "x-nullable": true
-        },
-        "connection_timed_out": {
-          "description": "Indicate that connection to assisted service was timed out when soft timeout is enabled.",
-          "type": "boolean"
         },
         "connectivity": {
           "type": "string",
@@ -8120,10 +7900,6 @@ func init() {
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
-        "stage_timed_out": {
-          "description": "Indicate of the current stage has been timed out.",
-          "type": "boolean"
-        },
         "stage_updated_at": {
           "description": "Time at which the current progress stage was last updated.",
           "type": "string",
@@ -8225,14 +8001,6 @@ func init() {
             "master",
             "worker"
           ],
-          "x-nullable": true
-        },
-        "ignition_endpoint_http_headers": {
-          "description": "JSON-formatted string of additional HTTP headers when fetching the ignition.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ignition-endpoint-http-headers-params"
-          },
           "x-nullable": true
         },
         "ignition_endpoint_token": {
@@ -8374,23 +8142,6 @@ func init() {
         }
       },
       "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:ignition_endpoint_\""
-    },
-    "ignition-endpoint-http-headers-params": {
-      "type": "object",
-      "required": [
-        "key",
-        "value"
-      ],
-      "properties": {
-        "key": {
-          "description": "The key for the http header's key-value pair.",
-          "type": "string"
-        },
-        "value": {
-          "description": "The value for the http header's key-value pair.",
-          "type": "string"
-        }
-      }
     },
     "ignored-validations": {
       "type": "object",
@@ -8759,11 +8510,6 @@ func init() {
         "kernel_arguments": {
           "$ref": "#/definitions/kernel_arguments"
         },
-        "openshift_version": {
-          "description": "Version of the OS image",
-          "type": "string",
-          "x-nullable": true
-        },
         "proxy": {
           "$ref": "#/definitions/proxy"
         },
@@ -8866,10 +8612,6 @@ func init() {
             "type": "string"
           }
         },
-        "enable_skip_mco_reboot": {
-          "description": "If true, assisted service will attempt to skip MCO reboot",
-          "type": "boolean"
-        },
         "high_availability_mode": {
           "description": "Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster\nover multiple master nodes whereas 'None' installs a full cluster over one node.\n",
           "type": "string",
@@ -8906,10 +8648,6 @@ func init() {
         "must_gather_image": {
           "description": "Must-gather images to use",
           "type": "string"
-        },
-        "notify_num_reboots": {
-          "description": "If true, notify number of reboots by assisted controller",
-          "type": "boolean"
         },
         "openshift_version": {
           "description": "Version of the OpenShift cluster.",
@@ -9152,29 +8890,6 @@ func init() {
           "type": "boolean"
         }
       }
-    },
-    "last-installation-preparation": {
-      "description": "Gives the status of the last installation preparation (if any)",
-      "type": "object",
-      "properties": {
-        "reason": {
-          "description": "The reason for the preparation status if applicable",
-          "type": "string"
-        },
-        "status": {
-          "description": "The last installation preparation status",
-          "type": "string",
-          "default": "not_started",
-          "enum": [
-            "not_started",
-            "failed",
-            "success"
-          ],
-          "x-nullable": false
-        }
-      },
-      "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:last_installation_preparation_\"",
-      "x-nullable": false
     },
     "list-managed-domains": {
       "type": "array",
@@ -9715,38 +9430,16 @@ func init() {
         "type"
       ],
       "properties": {
-        "external": {
-          "x-nullable": true,
-          "$ref": "#/definitions/platform_external"
+        "is_external": {
+          "description": "Used by the service to indicate that the platform-specific components are not included in\nOpenShift and must be provided as manifests separately.",
+          "type": "boolean",
+          "readOnly": true
         },
         "type": {
           "$ref": "#/definitions/platform_type"
         }
       },
       "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:platform_\""
-    },
-    "platform_external": {
-      "description": "Configuration used when installing with an external platform type.",
-      "type": "object",
-      "properties": {
-        "cloud_controller_manager": {
-          "description": "When set to external, this property will enable an external cloud provider.",
-          "type": "string",
-          "default": "",
-          "enum": [
-            "",
-            "External"
-          ],
-          "x-nullable": true
-        },
-        "platform_name": {
-          "description": "Holds the arbitrary string representing the infrastructure provider name.",
-          "type": "string",
-          "minLength": 1,
-          "x-nullable": true
-        }
-      },
-      "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:external_\""
     },
     "platform_type": {
       "type": "string",
@@ -9755,7 +9448,7 @@ func init() {
         "nutanix",
         "vsphere",
         "none",
-        "external"
+        "oci"
       ]
     },
     "preflight-hardware-requirements": {
@@ -10229,6 +9922,12 @@ func init() {
           "type": "string",
           "x-nullable": true
         },
+        "api_vip": {
+          "description": "(DEPRECATED) The virtual IP used to reach the OpenShift cluster's API.",
+          "type": "string",
+          "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$",
+          "x-nullable": true
+        },
         "api_vip_dns_name": {
           "description": "The domain name used to reach the OpenShift cluster API.",
           "type": "string",
@@ -10296,6 +9995,12 @@ func init() {
         "ignition_endpoint": {
           "description": "Explicit ignition endpoint overrides the default ignition endpoint.",
           "$ref": "#/definitions/ignition-endpoint"
+        },
+        "ingress_vip": {
+          "description": "(DEPRECATED) The virtual IP used for cluster ingress traffic.",
+          "type": "string",
+          "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$",
+          "x-nullable": true
         },
         "ingress_vips": {
           "description": "The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
@@ -12578,13 +12283,6 @@ func init() {
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "boolean",
-            "default": false,
-            "description": "Include system generated manifests in results? Default is false.",
-            "name": "include_system_generated",
-            "in": "query"
           }
         ],
         "responses": {
@@ -13180,80 +12878,6 @@ func init() {
         }
       }
     },
-    "/v2/clusters/{cluster_id}/progress": {
-      "put": {
-        "security": [
-          {
-            "agentAuth": []
-          }
-        ],
-        "description": "Update installation finalizing progress.",
-        "tags": [
-          "installer"
-        ],
-        "operationId": "v2UpdateClusterFinalizingProgress",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "uuid",
-            "description": "The cluster being updated.",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "description": "New progress value.",
-            "name": "finalizing-progress",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/cluster-finalizing-progress"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Update install progress."
-          },
-          "401": {
-            "description": "Unauthorized.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "404": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "405": {
-            "description": "Method Not Allowed.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "500": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "503": {
-            "description": "Unavailable.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
-    },
     "/v2/clusters/{cluster_id}/supported-platforms": {
       "get": {
         "security": [
@@ -13759,88 +13383,6 @@ func init() {
           },
           "500": {
             "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      },
-      "post": {
-        "security": [
-          {
-            "agentAuth": []
-          }
-        ],
-        "description": "Add new assisted installer event.",
-        "tags": [
-          "events"
-        ],
-        "operationId": "v2TriggerEvent",
-        "parameters": [
-          {
-            "description": "The event to be created.",
-            "name": "trigger-event-params",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/event"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Success."
-          },
-          "400": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "401": {
-            "description": "Unauthorized.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "schema": {
-              "$ref": "#/definitions/infra_error"
-            }
-          },
-          "404": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "405": {
-            "description": "Method Not Allowed.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "409": {
-            "description": "Cluster cannot accept new agents due to its current state.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "500": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "501": {
-            "description": "Not implemented.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "503": {
-            "description": "Unavailable.",
             "schema": {
               "$ref": "#/definitions/error"
             }
@@ -16352,17 +15894,11 @@ func init() {
               "none",
               "nutanix",
               "vsphere",
-              "external"
+              "oci"
             ],
             "type": "string",
             "description": "The provider platform type.",
             "name": "platform_type",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "description": "External platform name when platform type is set to external. The value of this parameter will be ignored if platform_type is not external.",
-            "name": "external_platform_name",
             "in": "query"
           }
         ],
@@ -16642,19 +16178,6 @@ func init() {
         }
       }
     },
-    "api_vip_connectivity_additional_request_header": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "description": "Value of the header's key when making a request",
-          "type": "string"
-        },
-        "value": {
-          "description": "The value corresponding to the header key",
-          "type": "string"
-        }
-      }
-    },
     "api_vip_connectivity_request": {
       "type": "object",
       "required": [
@@ -16667,18 +16190,9 @@ func init() {
           "x-nullable": true
         },
         "ignition_endpoint_token": {
-          "description": "A string which will be used as Authorization Bearer token to fetch the ignition from ignition_endpoint_url (DEPRECATED use request_headers to pass this token).",
+          "description": "A string which will be used as Authorization Bearer token to fetch the ignition from ignition_endpoint_url.",
           "type": "string",
           "x-nullable": true
-        },
-        "request_headers": {
-          "description": "Additional request headers to include when fetching the ignition from ignition_endpoint_url.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/api_vip_connectivity_additional_request_header"
-          },
-          "x-nullable": true,
-          "x-omitempty": true
         },
         "url": {
           "description": "URL address of the API.",
@@ -16736,9 +16250,6 @@ func init() {
     "boot": {
       "type": "object",
       "properties": {
-        "command_line": {
-          "type": "string"
-        },
         "current_boot_mode": {
           "type": "string"
         },
@@ -16766,6 +16277,11 @@ func init() {
           "description": "Unique identifier of the AMS subscription in OCM.",
           "type": "string",
           "format": "uuid"
+        },
+        "api_vip": {
+          "description": "(DEPRECATED) The virtual IP used to reach the OpenShift cluster's API.",
+          "type": "string",
+          "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$"
         },
         "api_vip_dns_name": {
           "description": "The domain name used to reach the OpenShift cluster API.",
@@ -16958,6 +16474,11 @@ func init() {
           "type": "boolean",
           "default": false
         },
+        "ingress_vip": {
+          "description": "(DEPRECATED) The virtual IP used for cluster ingress traffic.",
+          "type": "string",
+          "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$"
+        },
         "ingress_vips": {
           "description": "The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
           "type": "array",
@@ -16997,9 +16518,6 @@ func init() {
             "Cluster",
             "AddHostsCluster"
           ]
-        },
-        "last-installation-preparation": {
-          "$ref": "#/definitions/last-installation-preparation"
         },
         "logs_info": {
           "description": "The progress of log collection or empty if logs are not applicable",
@@ -17059,10 +16577,6 @@ func init() {
         },
         "org_id": {
           "type": "string"
-        },
-        "org_soft_timeouts_enabled": {
-          "description": "Indication if organization soft timeouts is enabled for the cluster.",
-          "type": "boolean"
         },
         "platform": {
           "$ref": "#/definitions/platform"
@@ -17195,6 +16709,11 @@ func init() {
           "type": "string",
           "x-nullable": true
         },
+        "api_vip": {
+          "description": "(DEPRECATED) The virtual IP used to reach the OpenShift cluster's API.",
+          "type": "string",
+          "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$"
+        },
         "api_vips": {
           "description": "The virtual IPs used to reach the OpenShift cluster's API. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
           "type": "array",
@@ -17278,6 +16797,11 @@ func init() {
         "ignition_endpoint": {
           "description": "Explicit ignition endpoint overrides the default ignition endpoint.",
           "$ref": "#/definitions/ignition-endpoint"
+        },
+        "ingress_vip": {
+          "description": "(DEPRECATED) The virtual IP used for cluster ingress traffic.",
+          "type": "string",
+          "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$"
         },
         "ingress_vips": {
           "description": "The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",
@@ -17379,14 +16903,6 @@ func init() {
         }
       }
     },
-    "cluster-finalizing-progress": {
-      "type": "object",
-      "properties": {
-        "finalizing_stage": {
-          "$ref": "#/definitions/finalizing-stage"
-        }
-      }
-    },
     "cluster-host-requirements": {
       "type": "object",
       "properties": {
@@ -17464,19 +16980,8 @@ func init() {
     "cluster-progress-info": {
       "type": "object",
       "properties": {
-        "finalizing_stage": {
-          "$ref": "#/definitions/finalizing-stage"
-        },
         "finalizing_stage_percentage": {
           "type": "integer"
-        },
-        "finalizing_stage_started_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
-        },
-        "finalizing_stage_timed_out": {
-          "type": "boolean"
         },
         "installing_stage_percentage": {
           "type": "integer"
@@ -18309,23 +17814,7 @@ func init() {
         "FULL_ISO",
         "EXTERNAL_PLATFORM_OCI",
         "DUAL_STACK",
-        "PLATFORM_MANAGED_NETWORKING",
-        "SKIP_MCO_REBOOT",
-        "EXTERNAL_PLATFORM",
-        "OVN_NETWORK_TYPE",
-        "SDN_NETWORK_TYPE"
-      ]
-    },
-    "finalizing-stage": {
-      "description": "Cluster finalizing stage managed by controller",
-      "type": "string",
-      "enum": [
-        "Waiting for cluster operators",
-        "Adding router ca",
-        "Applying olm manifests",
-        "Waiting for olm operators csv initialization",
-        "Waiting for olm operators csv",
-        "Done"
+        "PLATFORM_MANAGED_NETWORKING"
       ]
     },
     "free-addresses-list": {
@@ -18419,10 +17908,6 @@ func init() {
           "format": "uuid",
           "x-go-custom-tag": "gorm:\"foreignkey:Cluster\"",
           "x-nullable": true
-        },
-        "connection_timed_out": {
-          "description": "Indicate that connection to assisted service was timed out when soft timeout is enabled.",
-          "type": "boolean"
         },
         "connectivity": {
           "type": "string",
@@ -18750,10 +18235,6 @@ func init() {
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
-        "stage_timed_out": {
-          "description": "Indicate of the current stage has been timed out.",
-          "type": "boolean"
-        },
         "stage_updated_at": {
           "description": "Time at which the current progress stage was last updated.",
           "type": "string",
@@ -18855,14 +18336,6 @@ func init() {
             "master",
             "worker"
           ],
-          "x-nullable": true
-        },
-        "ignition_endpoint_http_headers": {
-          "description": "JSON-formatted string of additional HTTP headers when fetching the ignition.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ignition-endpoint-http-headers-params"
-          },
           "x-nullable": true
         },
         "ignition_endpoint_token": {
@@ -19004,23 +18477,6 @@ func init() {
         }
       },
       "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:ignition_endpoint_\""
-    },
-    "ignition-endpoint-http-headers-params": {
-      "type": "object",
-      "required": [
-        "key",
-        "value"
-      ],
-      "properties": {
-        "key": {
-          "description": "The key for the http header's key-value pair.",
-          "type": "string"
-        },
-        "value": {
-          "description": "The value for the http header's key-value pair.",
-          "type": "string"
-        }
-      }
     },
     "ignored-validations": {
       "type": "object",
@@ -19391,11 +18847,6 @@ func init() {
         "kernel_arguments": {
           "$ref": "#/definitions/kernel_arguments"
         },
-        "openshift_version": {
-          "description": "Version of the OS image",
-          "type": "string",
-          "x-nullable": true
-        },
         "proxy": {
           "$ref": "#/definitions/proxy"
         },
@@ -19498,10 +18949,6 @@ func init() {
             "type": "string"
           }
         },
-        "enable_skip_mco_reboot": {
-          "description": "If true, assisted service will attempt to skip MCO reboot",
-          "type": "boolean"
-        },
         "high_availability_mode": {
           "description": "Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster\nover multiple master nodes whereas 'None' installs a full cluster over one node.\n",
           "type": "string",
@@ -19538,10 +18985,6 @@ func init() {
         "must_gather_image": {
           "description": "Must-gather images to use",
           "type": "string"
-        },
-        "notify_num_reboots": {
-          "description": "If true, notify number of reboots by assisted controller",
-          "type": "boolean"
         },
         "openshift_version": {
           "description": "Version of the OpenShift cluster.",
@@ -19784,29 +19227,6 @@ func init() {
           "type": "boolean"
         }
       }
-    },
-    "last-installation-preparation": {
-      "description": "Gives the status of the last installation preparation (if any)",
-      "type": "object",
-      "properties": {
-        "reason": {
-          "description": "The reason for the preparation status if applicable",
-          "type": "string"
-        },
-        "status": {
-          "description": "The last installation preparation status",
-          "type": "string",
-          "default": "not_started",
-          "enum": [
-            "not_started",
-            "failed",
-            "success"
-          ],
-          "x-nullable": false
-        }
-      },
-      "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:last_installation_preparation_\"",
-      "x-nullable": false
     },
     "list-managed-domains": {
       "type": "array",
@@ -20336,38 +19756,16 @@ func init() {
         "type"
       ],
       "properties": {
-        "external": {
-          "x-nullable": true,
-          "$ref": "#/definitions/platform_external"
+        "is_external": {
+          "description": "Used by the service to indicate that the platform-specific components are not included in\nOpenShift and must be provided as manifests separately.",
+          "type": "boolean",
+          "readOnly": true
         },
         "type": {
           "$ref": "#/definitions/platform_type"
         }
       },
       "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:platform_\""
-    },
-    "platform_external": {
-      "description": "Configuration used when installing with an external platform type.",
-      "type": "object",
-      "properties": {
-        "cloud_controller_manager": {
-          "description": "When set to external, this property will enable an external cloud provider.",
-          "type": "string",
-          "default": "",
-          "enum": [
-            "",
-            "External"
-          ],
-          "x-nullable": true
-        },
-        "platform_name": {
-          "description": "Holds the arbitrary string representing the infrastructure provider name.",
-          "type": "string",
-          "minLength": 1,
-          "x-nullable": true
-        }
-      },
-      "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:external_\""
     },
     "platform_type": {
       "type": "string",
@@ -20376,7 +19774,7 @@ func init() {
         "nutanix",
         "vsphere",
         "none",
-        "external"
+        "oci"
       ]
     },
     "preflight-hardware-requirements": {
@@ -20824,6 +20222,12 @@ func init() {
           "type": "string",
           "x-nullable": true
         },
+        "api_vip": {
+          "description": "(DEPRECATED) The virtual IP used to reach the OpenShift cluster's API.",
+          "type": "string",
+          "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$",
+          "x-nullable": true
+        },
         "api_vip_dns_name": {
           "description": "The domain name used to reach the OpenShift cluster API.",
           "type": "string",
@@ -20891,6 +20295,12 @@ func init() {
         "ignition_endpoint": {
           "description": "Explicit ignition endpoint overrides the default ignition endpoint.",
           "$ref": "#/definitions/ignition-endpoint"
+        },
+        "ingress_vip": {
+          "description": "(DEPRECATED) The virtual IP used for cluster ingress traffic.",
+          "type": "string",
+          "pattern": "^(?:(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$",
+          "x-nullable": true
         },
         "ingress_vips": {
           "description": "The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.",

@@ -43,6 +43,9 @@ github.com/cespare/xxhash/v2
 # github.com/containerd/continuity v0.4.2
 ## explicit; go 1.19
 github.com/containerd/continuity/pathdriver
+# github.com/containers/image/v5 v5.20.0
+## explicit; go 1.13
+github.com/containers/image/v5/docker/reference
 # github.com/coreos/go-iptables v0.6.0
 ## explicit; go 1.16
 github.com/coreos/go-iptables/iptables
@@ -90,10 +93,6 @@ github.com/docker/cli/cli/compose/schema
 github.com/docker/cli/cli/compose/template
 github.com/docker/cli/cli/compose/types
 github.com/docker/cli/opts
-# github.com/docker/distribution v2.8.2+incompatible
-## explicit
-github.com/docker/distribution/digestset
-github.com/docker/distribution/reference
 # github.com/docker/docker v20.10.24+incompatible
 ## explicit
 github.com/docker/docker/api/types
@@ -123,10 +122,6 @@ github.com/fsnotify/fsnotify
 # github.com/ghodss/yaml v1.0.0
 ## explicit
 github.com/ghodss/yaml
-# github.com/go-jose/go-jose v2.6.3+incompatible
-## explicit
-github.com/go-jose/go-jose
-github.com/go-jose/go-jose/json
 # github.com/go-logr/logr v1.4.1
 ## explicit; go 1.18
 github.com/go-logr/logr
@@ -194,7 +189,7 @@ github.com/golang-jwt/jwt
 # github.com/golang-jwt/jwt/v4 v4.5.2
 ## explicit; go 1.16
 github.com/golang-jwt/jwt/v4
-# github.com/golang/glog v1.1.2
+# github.com/golang/glog v1.2.5
 ## explicit; go 1.19
 github.com/golang/glog
 github.com/golang/glog/internal/logsink
@@ -444,8 +439,8 @@ github.com/openshift-online/ocm-sdk-go/servicelogs/v1
 # github.com/openshift/api v0.0.0-20240521212423-414cf30d37be
 ## explicit; go 1.21
 github.com/openshift/api/config/v1
-# github.com/openshift/assisted-service v1.0.10-0.20241215111549-58068322e0f1
-## explicit; go 1.20
+# github.com/openshift/assisted-service v1.0.10-0.20250804133417-6df4bf1f0f2b
+## explicit; go 1.18
 github.com/openshift/assisted-service/internal/common
 github.com/openshift/assisted-service/internal/constants
 github.com/openshift/assisted-service/internal/events/api
@@ -779,13 +774,14 @@ google.golang.org/protobuf/types/known/timestamppb
 # gopkg.in/fsnotify.v1 v1.4.7
 ## explicit
 gopkg.in/fsnotify.v1
-# gopkg.in/go-jose/go-jose.v2 v2.6.3
-## explicit
-gopkg.in/go-jose/go-jose.v2/cipher
-gopkg.in/go-jose/go-jose.v2/json
 # gopkg.in/inf.v0 v0.9.1
 ## explicit
 gopkg.in/inf.v0
+# gopkg.in/square/go-jose.v2 v2.6.0
+## explicit
+gopkg.in/square/go-jose.v2
+gopkg.in/square/go-jose.v2/cipher
+gopkg.in/square/go-jose.v2/json
 # gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 ## explicit
 gopkg.in/tomb.v1
