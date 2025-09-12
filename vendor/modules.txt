@@ -94,7 +94,7 @@ github.com/docker/cli/opts
 ## explicit
 github.com/docker/distribution/digestset
 github.com/docker/distribution/reference
-# github.com/docker/docker v20.10.24+incompatible
+# github.com/docker/docker v23.0.11+incompatible
 ## explicit
 github.com/docker/docker/api/types
 github.com/docker/docker/api/types/blkiodev
@@ -107,6 +107,7 @@ github.com/docker/docker/api/types/strslice
 github.com/docker/docker/api/types/swarm
 github.com/docker/docker/api/types/swarm/runtime
 github.com/docker/docker/api/types/versions
+github.com/docker/docker/api/types/volume
 # github.com/docker/go-connections v0.5.0
 ## explicit; go 1.18
 github.com/docker/go-connections/nat
