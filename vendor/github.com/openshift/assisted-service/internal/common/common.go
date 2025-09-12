@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/docker/distribution/reference"
+	"github.com/containers/image/v5/docker/reference"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	yamlpatch "github.com/krishicks/yaml-patch"
@@ -263,7 +263,7 @@ func IsSliceNonEmpty(arg interface{}) bool {
 		funk.ForEach(arg, func(elem interface{}) {
 			v := reflect.ValueOf(elem)
 			if v.Kind() == reflect.Ptr {
-				v = reflect.Indirect(v.Elem())
+				v = v.Elem()
 			}
 			for i := 0; i < v.NumField(); i++ {
 				res = res || !v.Field(i).IsZero()
