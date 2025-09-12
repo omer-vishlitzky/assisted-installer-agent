@@ -40,7 +40,7 @@ require (
 	github.com/containerd/continuity v0.4.2 // indirect
 	github.com/docker/cli v20.10.14+incompatible // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
-	github.com/docker/docker v20.10.24+incompatible // indirect
+	github.com/docker/docker v23.0.15+incompatible // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/go-jose/go-jose v2.6.3+incompatible // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
