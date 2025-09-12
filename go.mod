@@ -49,7 +49,7 @@ require (
 	github.com/krishicks/yaml-patch v0.0.10 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
-	github.com/opencontainers/runc v1.1.5 // indirect
+	github.com/opencontainers/runc v1.1.14 // indirect
 	github.com/openshift/api v0.0.0-20240521212423-414cf30d37be // indirect
 	github.com/openshift/assisted-service/api v0.0.0 // indirect
 	github.com/openshift/hive/apis v0.0.0-20220222213051-def9088fdb5a // indirect
