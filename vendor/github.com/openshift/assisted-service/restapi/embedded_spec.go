@@ -50,6 +50,9 @@ func init() {
               "read-only-admin",
               "user"
             ]
+          },
+          {
+            "watcherAuth": []
           }
         ],
         "description": "Retrieves the list of OpenShift clusters.",
@@ -300,6 +303,9 @@ func init() {
           },
           {
             "agentAuth": []
+          },
+          {
+            "watcherAuth": []
           }
         ],
         "description": "Retrieves the details of the OpenShift cluster.",
@@ -1224,7 +1230,8 @@ func init() {
               "worker.ign",
               "install-config.yaml",
               "custom_manifests.json",
-              "custom_manifests.yaml"
+              "custom_manifests.yaml",
+              "arbiter.ign"
             ],
             "type": "string",
             "description": "The file to be downloaded.",
@@ -1440,6 +1447,7 @@ func init() {
           {
             "enum": [
               "master",
+              "arbiter",
               "worker",
               "auto-assign"
             ],
@@ -3054,6 +3062,9 @@ func init() {
           },
           {
             "urlAuth": []
+          },
+          {
+            "watcherAuth": []
           }
         ],
         "description": "Lists events for a cluster.",
@@ -3404,6 +3415,9 @@ func init() {
               "read-only-admin",
               "user"
             ]
+          },
+          {
+            "watcherAuth": []
           }
         ],
         "description": "Retrieves the list of infra-envs.",
@@ -5705,6 +5719,72 @@ func init() {
         }
       }
     },
+    "/v2/operators/bundles": {
+      "get": {
+        "description": "Retrieves a list of avaliable bundles.",
+        "tags": [
+          "operators"
+        ],
+        "summary": "Get list of avaliable bundles",
+        "operationId": "V2ListBundles",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/bundle"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/v2/operators/bundles/{id}": {
+      "get": {
+        "description": "Retrieves an array of operator properties for the specified bundle.",
+        "tags": [
+          "operators"
+        ],
+        "summary": "Get operator properties for a bundle",
+        "operationId": "V2GetBundle",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Identifier of the bundle, for example, ` + "`" + `virtualization` + "`" + ` or ` + "`" + `openshift-ai-nvidia` + "`" + `.",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/bundle"
+            }
+          },
+          "404": {
+            "description": "Bundle not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/v2/release-sources": {
       "get": {
         "security": [
@@ -5920,7 +6000,31 @@ func init() {
             "schema": {
               "type": "array",
               "items": {
-                "type": "string"
+                "type": "string",
+                "enum": [
+                  "amd-gpu",
+                  "lso",
+                  "mtv",
+                  "openshift-ai",
+                  "osc",
+                  "servicemesh",
+                  "authorino",
+                  "cnv",
+                  "nvidia-gpu",
+                  "pipelines",
+                  "odf",
+                  "lvm",
+                  "mce",
+                  "node-feature-discovery",
+                  "serverless",
+                  "nmstate",
+                  "kmm",
+                  "node-healthcheck",
+                  "self-node-remediation",
+                  "fence-agents-remediation",
+                  "node-maintenance",
+                  "kube-descheduler"
+                ]
               }
             }
           },
@@ -6126,7 +6230,41 @@ func init() {
         "current_boot_mode": {
           "type": "string"
         },
+        "device_type": {
+          "type": "string",
+          "enum": [
+            "persistent",
+            "ephemeral"
+          ]
+        },
         "pxe_interface": {
+          "type": "string"
+        },
+        "secure_boot_state": {
+          "$ref": "#/definitions/secure-boot-state"
+        }
+      }
+    },
+    "bundle": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "description": "Longer human friendly description for the bundle, usually one or more sentences.\n",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier of the bundle, for example ` + "`" + `virtualization` + "`" + ` or ` + "`" + `openshift-ai-nvidia` + "`" + `.",
+          "type": "string"
+        },
+        "operators": {
+          "description": "List of operators associated with the bundle.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "title": {
+          "description": "Short human friendly description for the bundle, usually only a few words, for example ` + "`" + `Virtualization` + "`" + ` or\n` + "`" + `OpenShift AI (NVIDIA)` + "`" + `.\n",
           "type": "string"
         }
       }
@@ -6193,6 +6331,10 @@ func init() {
           "description": "Json formatted string containing the majority groups for connectivity checks.",
           "type": "string",
           "x-go-custom-tag": "gorm:\"type:text\""
+        },
+        "control_plane_count": {
+          "description": "Specifies the required number of control plane nodes that should be part of the cluster.",
+          "type": "integer"
         },
         "controller_logs_collected_at": {
           "type": "string",
@@ -6266,7 +6408,7 @@ func init() {
           "x-go-custom-tag": "gorm:\"type:text\""
         },
         "high_availability_mode": {
-          "description": "Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster\nover multiple master nodes whereas 'None' installs a full cluster over one node.\n",
+          "description": "(DEPRECATED) Please use 'control_plane_count' instead. Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster\nover multiple master nodes whereas 'None' installs a full cluster over one node.\n",
           "type": "string",
           "default": "Full",
           "enum": [
@@ -6305,13 +6447,18 @@ func init() {
           "x-go-custom-tag": "gorm:\"column:https_proxy\""
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "enum": [
+            "none",
             "masters",
+            "arbiters",
             "workers",
-            "all",
-            "none"
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ]
         },
         "id": {
@@ -6384,6 +6531,9 @@ func init() {
         },
         "last-installation-preparation": {
           "$ref": "#/definitions/last-installation-preparation"
+        },
+        "load_balancer": {
+          "$ref": "#/definitions/load_balancer"
         },
         "logs_info": {
           "description": "The progress of log collection or empty if logs are not applicable",
@@ -6611,6 +6761,11 @@ func init() {
           },
           "x-nullable": true
         },
+        "control_plane_count": {
+          "description": "Specifies the required number of control plane nodes that should be part of the cluster.",
+          "type": "integer",
+          "x-nullable": true
+        },
         "cpu_architecture": {
           "description": "The CPU architecture of the image (x86_64/arm64/etc).",
           "type": "string",
@@ -6630,7 +6785,7 @@ func init() {
           "$ref": "#/definitions/disk-encryption"
         },
         "high_availability_mode": {
-          "description": "Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster\nover multiple master nodes whereas 'None' installs a full cluster over one node.\n",
+          "description": "(DEPRECATED) Please use 'control_plane_count' instead. Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster\nover multiple master nodes whereas 'None' installs a full cluster over one node.\n",
           "type": "string",
           "default": "Full",
           "enum": [
@@ -6649,13 +6804,18 @@ func init() {
           "x-nullable": true
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "default": "all",
           "enum": [
-            "masters",
-            "workers",
             "none",
+            "masters",
+            "arbiters",
+            "workers",
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
             "all"
           ]
         },
@@ -6669,6 +6829,9 @@ func init() {
           "items": {
             "$ref": "#/definitions/ingress_vip"
           }
+        },
+        "load_balancer": {
+          "$ref": "#/definitions/load_balancer"
         },
         "machine_networks": {
           "description": "Machine networks that are associated with this cluster.",
@@ -6703,7 +6866,7 @@ func init() {
           "type": "string"
         },
         "olm_operators": {
-          "description": "List of OLM operators to be installed.",
+          "description": "List of OLM operators to be installed.\nFor the full list of supported operators, check the endpoint ` + "`" + `/v2/supported-operators` + "`" + `:\n",
           "type": "array",
           "items": {
             "$ref": "#/definitions/operator-create-params"
@@ -6899,8 +7062,25 @@ func init() {
         "cnv-requirements-satisfied",
         "lvm-requirements-satisfied",
         "mce-requirements-satisfied",
+        "mtv-requirements-satisfied",
+        "osc-requirements-satisfied",
         "network-type-valid",
-        "platform-requirements-satisfied"
+        "platform-requirements-satisfied",
+        "node-feature-discovery-requirements-satisfied",
+        "nvidia-gpu-requirements-satisfied",
+        "pipelines-requirements-satisfied",
+        "servicemesh-requirements-satisfied",
+        "serverless-requirements-satisfied",
+        "openshift-ai-requirements-satisfied",
+        "authorino-requirements-satisfied",
+        "nmstate-requirements-satisfied",
+        "amd-gpu-requirements-satisfied",
+        "kmm-requirements-satisfied",
+        "node-healthcheck-requirements-satisfied",
+        "self-node-remediation-requirements-satisfied",
+        "fence-agents-remediation-requirements-satisfied",
+        "node-maintenance-requirements-satisfied",
+        "kube-descheduler-requirements-satisfied"
       ]
     },
     "cluster_default_config": {
@@ -7059,6 +7239,12 @@ func init() {
           "type": "array",
           "items": {
             "$ref": "#/definitions/l3-connectivity"
+          }
+        },
+        "mtu_report": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/mtu-report"
           }
         }
       }
@@ -7373,14 +7559,19 @@ func init() {
       "type": "object",
       "properties": {
         "enable_on": {
-          "description": "Enable/disable disk encryption on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable disk encryption on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "default": "none",
           "enum": [
             "none",
-            "all",
             "masters",
-            "workers"
+            "arbiters",
+            "workers",
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ]
         },
         "mode": {
@@ -7713,6 +7904,7 @@ func init() {
       "type": "string",
       "enum": [
         "SNO",
+        "TNA",
         "VIP_AUTO_ALLOC",
         "CUSTOM_MANIFEST",
         "SINGLE_NODE_EXPANSION",
@@ -7721,6 +7913,8 @@ func init() {
         "LSO",
         "CNV",
         "MCE",
+        "MTV",
+        "OSC",
         "NUTANIX_INTEGRATION",
         "BAREMETAL_PLATFORM",
         "NONE_PLATFORM",
@@ -7733,10 +7927,26 @@ func init() {
         "EXTERNAL_PLATFORM_OCI",
         "DUAL_STACK",
         "PLATFORM_MANAGED_NETWORKING",
-        "SKIP_MCO_REBOOT",
         "EXTERNAL_PLATFORM",
         "OVN_NETWORK_TYPE",
-        "SDN_NETWORK_TYPE"
+        "SDN_NETWORK_TYPE",
+        "NODE_FEATURE_DISCOVERY",
+        "NVIDIA_GPU",
+        "PIPELINES",
+        "SERVICEMESH",
+        "SERVERLESS",
+        "OPENSHIFT_AI",
+        "NON_STANDARD_HA_CONTROL_PLANE",
+        "AUTHORINO",
+        "USER_MANAGED_LOAD_BALANCER",
+        "NMSTATE",
+        "AMD_GPU",
+        "KMM",
+        "NODE_HEALTHCHECK",
+        "SELF_NODE_REMEDIATION",
+        "FENCE_AGENTS_REMEDIATION",
+        "NODE_MAINTENANCE",
+        "KUBE_DESCHEDULER"
       ]
     },
     "finalizing-stage": {
@@ -7748,6 +7958,7 @@ func init() {
         "Applying olm manifests",
         "Waiting for olm operators csv initialization",
         "Waiting for olm operators csv",
+        "Waiting for OLM operator setup jobs",
         "Done"
       ]
     },
@@ -8191,6 +8402,7 @@ func init() {
       "enum": [
         "auto-assign",
         "master",
+        "arbiter",
         "worker",
         "bootstrap"
       ]
@@ -8200,6 +8412,7 @@ func init() {
       "enum": [
         "auto-assign",
         "master",
+        "arbiter",
         "worker"
       ]
     },
@@ -8276,6 +8489,7 @@ func init() {
           "enum": [
             "auto-assign",
             "master",
+            "arbiter",
             "worker"
           ],
           "x-nullable": true
@@ -8333,6 +8547,8 @@ func init() {
         "odf-requirements-satisfied",
         "lvm-requirements-satisfied",
         "mce-requirements-satisfied",
+        "mtv-requirements-satisfied",
+        "osc-requirements-satisfied",
         "sufficient-installation-disk-speed",
         "cnv-requirements-satisfied",
         "sufficient-network-latency-requirement-for-role",
@@ -8350,7 +8566,24 @@ func init() {
         "compatible-agent",
         "no-skip-installation-disk",
         "no-skip-missing-disk",
-        "no-ip-collisions-in-network"
+        "no-ip-collisions-in-network",
+        "no-iscsi-nic-belongs-to-machine-cidr",
+        "node-feature-discovery-requirements-satisfied",
+        "nvidia-gpu-requirements-satisfied",
+        "pipelines-requirements-satisfied",
+        "servicemesh-requirements-satisfied",
+        "serverless-requirements-satisfied",
+        "openshift-ai-requirements-satisfied",
+        "authorino-requirements-satisfied",
+        "mtu-valid",
+        "nmstate-requirements-satisfied",
+        "amd-gpu-requirements-satisfied",
+        "kmm-requirements-satisfied",
+        "node-healthcheck-requirements-satisfied",
+        "self-node-remediation-requirements-satisfied",
+        "fence-agents-remediation-requirements-satisfied",
+        "node-maintenance-requirements-satisfied",
+        "kube-descheduler-requirements-satisfied"
       ]
     },
     "host_network": {
@@ -8906,10 +9139,18 @@ func init() {
           "type": "string",
           "format": "uuid"
         },
+        "control_plane_count": {
+          "description": "Specifies the required number of control plane nodes that should be part of the cluster.",
+          "type": "integer"
+        },
         "controller_image": {
           "description": "Assisted installer controller image",
           "type": "string",
           "pattern": "^(([a-zA-Z0-9\\-\\.]+)(:[0-9]+)?\\/)?[a-z0-9\\._\\-\\/@]+[?::a-zA-Z0-9_\\-.]+$"
+        },
+        "coreos_image": {
+          "description": "CoreOS container image to use if installing to the local device",
+          "type": "string"
         },
         "disks_to_format": {
           "description": "List of disks to format",
@@ -8922,15 +9163,6 @@ func init() {
         "enable_skip_mco_reboot": {
           "description": "If true, assisted service will attempt to skip MCO reboot",
           "type": "boolean"
-        },
-        "high_availability_mode": {
-          "description": "Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster\nover multiple master nodes whereas 'None' installs a full cluster over one node.\n",
-          "type": "string",
-          "default": "Full",
-          "enum": [
-            "Full",
-            "None"
-          ]
         },
         "host_id": {
           "description": "Host id",
@@ -9261,6 +9493,21 @@ func init() {
         }
       }
     },
+    "load_balancer": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "Indicates if the load balancer will be managed by the cluster or by the user. This is optional and The\ndefault is ` + "`" + `cluster-managed` + "`" + `.\n\n` + "`" + `cluster-managed` + "`" + ` means that the cluster will start the components that assign the API and ingress VIPs to the\nnodes of the cluster automatically.\n\n` + "`" + `user-managed` + "`" + ` means that the user is responsible for configuring an external load balancer and assign the\nAPI and ingress VIPs to it. Note that this configuration needs to be completed before starting the\ninstallation of the cluster, as it is needed during the installation process.\n",
+          "type": "string",
+          "enum": [
+            "cluster-managed",
+            "user-managed"
+          ],
+          "x-go-custom-tag": "gorm:\"not null;check:load_balancer_type in ('cluster-managed', 'user-managed');default:'cluster-managed'\""
+        }
+      },
+      "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:load_balancer_\""
+    },
     "logs-progress-params": {
       "type": "object",
       "required": [
@@ -9436,11 +9683,32 @@ func init() {
     "monitored-operator": {
       "type": "object",
       "properties": {
+        "bundles": {
+          "description": "List of identifier of the bundles associated with the operator. Can be empty.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-custom-tag": "gorm:\"type:text[]\"",
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "github.com/lib/pq"
+            },
+            "type": "StringArray"
+          }
+        },
         "cluster_id": {
           "description": "The cluster that this operator is associated with.",
           "type": "string",
           "format": "uuid",
           "x-go-custom-tag": "gorm:\"primaryKey\""
+        },
+        "dependency_only": {
+          "description": "Whether the operator can't be installed without being required by another operator.",
+          "type": "boolean"
         },
         "name": {
           "description": "Unique name of the operator.",
@@ -9490,6 +9758,20 @@ func init() {
       "type": "array",
       "items": {
         "$ref": "#/definitions/monitored-operator"
+      }
+    },
+    "mtu-report": {
+      "type": "object",
+      "properties": {
+        "mtu_successful": {
+          "type": "boolean"
+        },
+        "outgoing_nic": {
+          "type": "string"
+        },
+        "remote_ip_address": {
+          "type": "string"
+        }
       }
     },
     "next_step_cmd_request": {
@@ -10049,6 +10331,15 @@ func init() {
           "format": "int32"
         }
       }
+    },
+    "secure-boot-state": {
+      "type": "string",
+      "enum": [
+        "Unknown",
+        "NotSupported",
+        "Enabled",
+        "Disabled"
+      ]
     },
     "service_network": {
       "description": "IP address block for service IP blocks.",
@@ -10429,6 +10720,11 @@ func init() {
           },
           "x-nullable": true
         },
+        "control_plane_count": {
+          "description": "Specifies the required number of control plane nodes that should be part of the cluster.",
+          "type": "integer",
+          "x-nullable": true
+        },
         "disk_encryption": {
           "description": "Installation disks encryption mode and host roles to be applied.",
           "$ref": "#/definitions/disk-encryption"
@@ -10444,13 +10740,18 @@ func init() {
           "x-nullable": true
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "enum": [
+            "none",
             "masters",
+            "arbiters",
             "workers",
-            "all",
-            "none"
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ],
           "x-nullable": true
         },
@@ -10465,6 +10766,9 @@ func init() {
             "$ref": "#/definitions/ingress_vip"
           },
           "x-nullable": true
+        },
+        "load_balancer": {
+          "$ref": "#/definitions/load_balancer"
         },
         "machine_network_cidr": {
           "description": "A CIDR that all hosts belonging to the cluster should have an interfaces with IP address that belongs to this CIDR. The api_vip belongs to this CIDR.",
@@ -10502,7 +10806,7 @@ func init() {
           "x-nullable": true
         },
         "olm_operators": {
-          "description": "List of OLM operators to be installed.",
+          "description": "List of OLM operators to be installed.\nFor the full list of supported operators, check the endpoint ` + "`" + `/v2/supported-operators` + "`" + `:\n",
           "type": "array",
           "items": {
             "$ref": "#/definitions/operator-create-params"
@@ -10601,6 +10905,11 @@ func init() {
     "versioned-host-requirements": {
       "type": "object",
       "properties": {
+        "arbiter": {
+          "description": "Arbiter node requirements",
+          "x-go-name": "ArbiterRequirements",
+          "$ref": "#/definitions/cluster-host-requirements-details"
+        },
         "edge-worker": {
           "description": "Edge Worker OpenShift node requirements",
           "x-go-name": "EdgeWorkerRequirements",
@@ -10677,6 +10986,11 @@ func init() {
       "type": "apiKey",
       "name": "Authorization",
       "in": "header"
+    },
+    "watcherAuth": {
+      "type": "apiKey",
+      "name": "Watcher-Authorization",
+      "in": "header"
     }
   },
   "security": [
@@ -10751,6 +11065,9 @@ func init() {
               "read-only-admin",
               "user"
             ]
+          },
+          {
+            "watcherAuth": []
           }
         ],
         "description": "Retrieves the list of OpenShift clusters.",
@@ -11001,6 +11318,9 @@ func init() {
           },
           {
             "agentAuth": []
+          },
+          {
+            "watcherAuth": []
           }
         ],
         "description": "Retrieves the details of the OpenShift cluster.",
@@ -11925,7 +12245,8 @@ func init() {
               "worker.ign",
               "install-config.yaml",
               "custom_manifests.json",
-              "custom_manifests.yaml"
+              "custom_manifests.yaml",
+              "arbiter.ign"
             ],
             "type": "string",
             "description": "The file to be downloaded.",
@@ -12141,6 +12462,7 @@ func init() {
           {
             "enum": [
               "master",
+              "arbiter",
               "worker",
               "auto-assign"
             ],
@@ -13755,6 +14077,9 @@ func init() {
           },
           {
             "urlAuth": []
+          },
+          {
+            "watcherAuth": []
           }
         ],
         "description": "Lists events for a cluster.",
@@ -14110,6 +14435,9 @@ func init() {
               "read-only-admin",
               "user"
             ]
+          },
+          {
+            "watcherAuth": []
           }
         ],
         "description": "Retrieves the list of infra-envs.",
@@ -16411,6 +16739,72 @@ func init() {
         }
       }
     },
+    "/v2/operators/bundles": {
+      "get": {
+        "description": "Retrieves a list of avaliable bundles.",
+        "tags": [
+          "operators"
+        ],
+        "summary": "Get list of avaliable bundles",
+        "operationId": "V2ListBundles",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/bundle"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/v2/operators/bundles/{id}": {
+      "get": {
+        "description": "Retrieves an array of operator properties for the specified bundle.",
+        "tags": [
+          "operators"
+        ],
+        "summary": "Get operator properties for a bundle",
+        "operationId": "V2GetBundle",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Identifier of the bundle, for example, ` + "`" + `virtualization` + "`" + ` or ` + "`" + `openshift-ai-nvidia` + "`" + `.",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/bundle"
+            }
+          },
+          "404": {
+            "description": "Bundle not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/v2/release-sources": {
       "get": {
         "security": [
@@ -16626,7 +17020,31 @@ func init() {
             "schema": {
               "type": "array",
               "items": {
-                "type": "string"
+                "type": "string",
+                "enum": [
+                  "amd-gpu",
+                  "lso",
+                  "mtv",
+                  "openshift-ai",
+                  "osc",
+                  "servicemesh",
+                  "authorino",
+                  "cnv",
+                  "nvidia-gpu",
+                  "pipelines",
+                  "odf",
+                  "lvm",
+                  "mce",
+                  "node-feature-discovery",
+                  "serverless",
+                  "nmstate",
+                  "kmm",
+                  "node-healthcheck",
+                  "self-node-remediation",
+                  "fence-agents-remediation",
+                  "node-maintenance",
+                  "kube-descheduler"
+                ]
               }
             }
           },
@@ -16950,7 +17368,41 @@ func init() {
         "current_boot_mode": {
           "type": "string"
         },
+        "device_type": {
+          "type": "string",
+          "enum": [
+            "persistent",
+            "ephemeral"
+          ]
+        },
         "pxe_interface": {
+          "type": "string"
+        },
+        "secure_boot_state": {
+          "$ref": "#/definitions/secure-boot-state"
+        }
+      }
+    },
+    "bundle": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "description": "Longer human friendly description for the bundle, usually one or more sentences.\n",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier of the bundle, for example ` + "`" + `virtualization` + "`" + ` or ` + "`" + `openshift-ai-nvidia` + "`" + `.",
+          "type": "string"
+        },
+        "operators": {
+          "description": "List of operators associated with the bundle.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "title": {
+          "description": "Short human friendly description for the bundle, usually only a few words, for example ` + "`" + `Virtualization` + "`" + ` or\n` + "`" + `OpenShift AI (NVIDIA)` + "`" + `.\n",
           "type": "string"
         }
       }
@@ -17017,6 +17469,10 @@ func init() {
           "description": "Json formatted string containing the majority groups for connectivity checks.",
           "type": "string",
           "x-go-custom-tag": "gorm:\"type:text\""
+        },
+        "control_plane_count": {
+          "description": "Specifies the required number of control plane nodes that should be part of the cluster.",
+          "type": "integer"
         },
         "controller_logs_collected_at": {
           "type": "string",
@@ -17090,7 +17546,7 @@ func init() {
           "x-go-custom-tag": "gorm:\"type:text\""
         },
         "high_availability_mode": {
-          "description": "Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster\nover multiple master nodes whereas 'None' installs a full cluster over one node.\n",
+          "description": "(DEPRECATED) Please use 'control_plane_count' instead. Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster\nover multiple master nodes whereas 'None' installs a full cluster over one node.\n",
           "type": "string",
           "default": "Full",
           "enum": [
@@ -17129,13 +17585,18 @@ func init() {
           "x-go-custom-tag": "gorm:\"column:https_proxy\""
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "enum": [
+            "none",
             "masters",
+            "arbiters",
             "workers",
-            "all",
-            "none"
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ]
         },
         "id": {
@@ -17208,6 +17669,9 @@ func init() {
         },
         "last-installation-preparation": {
           "$ref": "#/definitions/last-installation-preparation"
+        },
+        "load_balancer": {
+          "$ref": "#/definitions/load_balancer"
         },
         "logs_info": {
           "description": "The progress of log collection or empty if logs are not applicable",
@@ -17435,6 +17899,11 @@ func init() {
           },
           "x-nullable": true
         },
+        "control_plane_count": {
+          "description": "Specifies the required number of control plane nodes that should be part of the cluster.",
+          "type": "integer",
+          "x-nullable": true
+        },
         "cpu_architecture": {
           "description": "The CPU architecture of the image (x86_64/arm64/etc).",
           "type": "string",
@@ -17454,7 +17923,7 @@ func init() {
           "$ref": "#/definitions/disk-encryption"
         },
         "high_availability_mode": {
-          "description": "Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster\nover multiple master nodes whereas 'None' installs a full cluster over one node.\n",
+          "description": "(DEPRECATED) Please use 'control_plane_count' instead. Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster\nover multiple master nodes whereas 'None' installs a full cluster over one node.\n",
           "type": "string",
           "default": "Full",
           "enum": [
@@ -17473,13 +17942,18 @@ func init() {
           "x-nullable": true
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "default": "all",
           "enum": [
-            "masters",
-            "workers",
             "none",
+            "masters",
+            "arbiters",
+            "workers",
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
             "all"
           ]
         },
@@ -17493,6 +17967,9 @@ func init() {
           "items": {
             "$ref": "#/definitions/ingress_vip"
           }
+        },
+        "load_balancer": {
+          "$ref": "#/definitions/load_balancer"
         },
         "machine_networks": {
           "description": "Machine networks that are associated with this cluster.",
@@ -17527,7 +18004,7 @@ func init() {
           "type": "string"
         },
         "olm_operators": {
-          "description": "List of OLM operators to be installed.",
+          "description": "List of OLM operators to be installed.\nFor the full list of supported operators, check the endpoint ` + "`" + `/v2/supported-operators` + "`" + `:\n",
           "type": "array",
           "items": {
             "$ref": "#/definitions/operator-create-params"
@@ -17723,8 +18200,25 @@ func init() {
         "cnv-requirements-satisfied",
         "lvm-requirements-satisfied",
         "mce-requirements-satisfied",
+        "mtv-requirements-satisfied",
+        "osc-requirements-satisfied",
         "network-type-valid",
-        "platform-requirements-satisfied"
+        "platform-requirements-satisfied",
+        "node-feature-discovery-requirements-satisfied",
+        "nvidia-gpu-requirements-satisfied",
+        "pipelines-requirements-satisfied",
+        "servicemesh-requirements-satisfied",
+        "serverless-requirements-satisfied",
+        "openshift-ai-requirements-satisfied",
+        "authorino-requirements-satisfied",
+        "nmstate-requirements-satisfied",
+        "amd-gpu-requirements-satisfied",
+        "kmm-requirements-satisfied",
+        "node-healthcheck-requirements-satisfied",
+        "self-node-remediation-requirements-satisfied",
+        "fence-agents-remediation-requirements-satisfied",
+        "node-maintenance-requirements-satisfied",
+        "kube-descheduler-requirements-satisfied"
       ]
     },
     "cluster_default_config": {
@@ -17883,6 +18377,12 @@ func init() {
           "type": "array",
           "items": {
             "$ref": "#/definitions/l3-connectivity"
+          }
+        },
+        "mtu_report": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/mtu-report"
           }
         }
       }
@@ -18197,14 +18697,19 @@ func init() {
       "type": "object",
       "properties": {
         "enable_on": {
-          "description": "Enable/disable disk encryption on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable disk encryption on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "default": "none",
           "enum": [
             "none",
-            "all",
             "masters",
-            "workers"
+            "arbiters",
+            "workers",
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ]
         },
         "mode": {
@@ -18504,6 +19009,7 @@ func init() {
       "type": "string",
       "enum": [
         "SNO",
+        "TNA",
         "VIP_AUTO_ALLOC",
         "CUSTOM_MANIFEST",
         "SINGLE_NODE_EXPANSION",
@@ -18512,6 +19018,8 @@ func init() {
         "LSO",
         "CNV",
         "MCE",
+        "MTV",
+        "OSC",
         "NUTANIX_INTEGRATION",
         "BAREMETAL_PLATFORM",
         "NONE_PLATFORM",
@@ -18524,10 +19032,26 @@ func init() {
         "EXTERNAL_PLATFORM_OCI",
         "DUAL_STACK",
         "PLATFORM_MANAGED_NETWORKING",
-        "SKIP_MCO_REBOOT",
         "EXTERNAL_PLATFORM",
         "OVN_NETWORK_TYPE",
-        "SDN_NETWORK_TYPE"
+        "SDN_NETWORK_TYPE",
+        "NODE_FEATURE_DISCOVERY",
+        "NVIDIA_GPU",
+        "PIPELINES",
+        "SERVICEMESH",
+        "SERVERLESS",
+        "OPENSHIFT_AI",
+        "NON_STANDARD_HA_CONTROL_PLANE",
+        "AUTHORINO",
+        "USER_MANAGED_LOAD_BALANCER",
+        "NMSTATE",
+        "AMD_GPU",
+        "KMM",
+        "NODE_HEALTHCHECK",
+        "SELF_NODE_REMEDIATION",
+        "FENCE_AGENTS_REMEDIATION",
+        "NODE_MAINTENANCE",
+        "KUBE_DESCHEDULER"
       ]
     },
     "finalizing-stage": {
@@ -18539,6 +19063,7 @@ func init() {
         "Applying olm manifests",
         "Waiting for olm operators csv initialization",
         "Waiting for olm operators csv",
+        "Waiting for OLM operator setup jobs",
         "Done"
       ]
     },
@@ -18982,6 +19507,7 @@ func init() {
       "enum": [
         "auto-assign",
         "master",
+        "arbiter",
         "worker",
         "bootstrap"
       ]
@@ -18991,6 +19517,7 @@ func init() {
       "enum": [
         "auto-assign",
         "master",
+        "arbiter",
         "worker"
       ]
     },
@@ -19067,6 +19594,7 @@ func init() {
           "enum": [
             "auto-assign",
             "master",
+            "arbiter",
             "worker"
           ],
           "x-nullable": true
@@ -19124,6 +19652,8 @@ func init() {
         "odf-requirements-satisfied",
         "lvm-requirements-satisfied",
         "mce-requirements-satisfied",
+        "mtv-requirements-satisfied",
+        "osc-requirements-satisfied",
         "sufficient-installation-disk-speed",
         "cnv-requirements-satisfied",
         "sufficient-network-latency-requirement-for-role",
@@ -19141,7 +19671,24 @@ func init() {
         "compatible-agent",
         "no-skip-installation-disk",
         "no-skip-missing-disk",
-        "no-ip-collisions-in-network"
+        "no-ip-collisions-in-network",
+        "no-iscsi-nic-belongs-to-machine-cidr",
+        "node-feature-discovery-requirements-satisfied",
+        "nvidia-gpu-requirements-satisfied",
+        "pipelines-requirements-satisfied",
+        "servicemesh-requirements-satisfied",
+        "serverless-requirements-satisfied",
+        "openshift-ai-requirements-satisfied",
+        "authorino-requirements-satisfied",
+        "mtu-valid",
+        "nmstate-requirements-satisfied",
+        "amd-gpu-requirements-satisfied",
+        "kmm-requirements-satisfied",
+        "node-healthcheck-requirements-satisfied",
+        "self-node-remediation-requirements-satisfied",
+        "fence-agents-remediation-requirements-satisfied",
+        "node-maintenance-requirements-satisfied",
+        "kube-descheduler-requirements-satisfied"
       ]
     },
     "host_network": {
@@ -19699,10 +20246,18 @@ func init() {
           "type": "string",
           "format": "uuid"
         },
+        "control_plane_count": {
+          "description": "Specifies the required number of control plane nodes that should be part of the cluster.",
+          "type": "integer"
+        },
         "controller_image": {
           "description": "Assisted installer controller image",
           "type": "string",
           "pattern": "^(([a-zA-Z0-9\\-\\.]+)(:[0-9]+)?\\/)?[a-z0-9\\._\\-\\/@]+[?::a-zA-Z0-9_\\-.]+$"
+        },
+        "coreos_image": {
+          "description": "CoreOS container image to use if installing to the local device",
+          "type": "string"
         },
         "disks_to_format": {
           "description": "List of disks to format",
@@ -19715,15 +20270,6 @@ func init() {
         "enable_skip_mco_reboot": {
           "description": "If true, assisted service will attempt to skip MCO reboot",
           "type": "boolean"
-        },
-        "high_availability_mode": {
-          "description": "Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster\nover multiple master nodes whereas 'None' installs a full cluster over one node.\n",
-          "type": "string",
-          "default": "Full",
-          "enum": [
-            "Full",
-            "None"
-          ]
         },
         "host_id": {
           "description": "Host id",
@@ -20054,6 +20600,21 @@ func init() {
         }
       }
     },
+    "load_balancer": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "Indicates if the load balancer will be managed by the cluster or by the user. This is optional and The\ndefault is ` + "`" + `cluster-managed` + "`" + `.\n\n` + "`" + `cluster-managed` + "`" + ` means that the cluster will start the components that assign the API and ingress VIPs to the\nnodes of the cluster automatically.\n\n` + "`" + `user-managed` + "`" + ` means that the user is responsible for configuring an external load balancer and assign the\nAPI and ingress VIPs to it. Note that this configuration needs to be completed before starting the\ninstallation of the cluster, as it is needed during the installation process.\n",
+          "type": "string",
+          "enum": [
+            "cluster-managed",
+            "user-managed"
+          ],
+          "x-go-custom-tag": "gorm:\"not null;check:load_balancer_type in ('cluster-managed', 'user-managed');default:'cluster-managed'\""
+        }
+      },
+      "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:load_balancer_\""
+    },
     "logs-progress-params": {
       "type": "object",
       "required": [
@@ -20218,11 +20779,32 @@ func init() {
     "monitored-operator": {
       "type": "object",
       "properties": {
+        "bundles": {
+          "description": "List of identifier of the bundles associated with the operator. Can be empty.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-custom-tag": "gorm:\"type:text[]\"",
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "github.com/lib/pq"
+            },
+            "type": "StringArray"
+          }
+        },
         "cluster_id": {
           "description": "The cluster that this operator is associated with.",
           "type": "string",
           "format": "uuid",
           "x-go-custom-tag": "gorm:\"primaryKey\""
+        },
+        "dependency_only": {
+          "description": "Whether the operator can't be installed without being required by another operator.",
+          "type": "boolean"
         },
         "name": {
           "description": "Unique name of the operator.",
@@ -20272,6 +20854,20 @@ func init() {
       "type": "array",
       "items": {
         "$ref": "#/definitions/monitored-operator"
+      }
+    },
+    "mtu-report": {
+      "type": "object",
+      "properties": {
+        "mtu_successful": {
+          "type": "boolean"
+        },
+        "outgoing_nic": {
+          "type": "string"
+        },
+        "remote_ip_address": {
+          "type": "string"
+        }
       }
     },
     "next_step_cmd_request": {
@@ -20832,6 +21428,15 @@ func init() {
         }
       }
     },
+    "secure-boot-state": {
+      "type": "string",
+      "enum": [
+        "Unknown",
+        "NotSupported",
+        "Enabled",
+        "Disabled"
+      ]
+    },
     "service_network": {
       "description": "IP address block for service IP blocks.",
       "type": "object",
@@ -21185,6 +21790,11 @@ func init() {
           },
           "x-nullable": true
         },
+        "control_plane_count": {
+          "description": "Specifies the required number of control plane nodes that should be part of the cluster.",
+          "type": "integer",
+          "x-nullable": true
+        },
         "disk_encryption": {
           "description": "Installation disks encryption mode and host roles to be applied.",
           "$ref": "#/definitions/disk-encryption"
@@ -21200,13 +21810,18 @@ func init() {
           "x-nullable": true
         },
         "hyperthreading": {
-          "description": "Enable/disable hyperthreading on master nodes, worker nodes, or all nodes.",
+          "description": "Enable/disable hyperthreading on master nodes, arbiter nodes, worker nodes, or a combination of them.",
           "type": "string",
           "enum": [
+            "none",
             "masters",
+            "arbiters",
             "workers",
-            "all",
-            "none"
+            "masters,arbiters",
+            "masters,workers",
+            "arbiters,workers",
+            "masters,arbiters,workers",
+            "all"
           ],
           "x-nullable": true
         },
@@ -21221,6 +21836,9 @@ func init() {
             "$ref": "#/definitions/ingress_vip"
           },
           "x-nullable": true
+        },
+        "load_balancer": {
+          "$ref": "#/definitions/load_balancer"
         },
         "machine_network_cidr": {
           "description": "A CIDR that all hosts belonging to the cluster should have an interfaces with IP address that belongs to this CIDR. The api_vip belongs to this CIDR.",
@@ -21258,7 +21876,7 @@ func init() {
           "x-nullable": true
         },
         "olm_operators": {
-          "description": "List of OLM operators to be installed.",
+          "description": "List of OLM operators to be installed.\nFor the full list of supported operators, check the endpoint ` + "`" + `/v2/supported-operators` + "`" + `:\n",
           "type": "array",
           "items": {
             "$ref": "#/definitions/operator-create-params"
@@ -21357,6 +21975,11 @@ func init() {
     "versioned-host-requirements": {
       "type": "object",
       "properties": {
+        "arbiter": {
+          "description": "Arbiter node requirements",
+          "x-go-name": "ArbiterRequirements",
+          "$ref": "#/definitions/cluster-host-requirements-details"
+        },
         "edge-worker": {
           "description": "Edge Worker OpenShift node requirements",
           "x-go-name": "EdgeWorkerRequirements",
@@ -21432,6 +22055,11 @@ func init() {
     "userAuth": {
       "type": "apiKey",
       "name": "Authorization",
+      "in": "header"
+    },
+    "watcherAuth": {
+      "type": "apiKey",
+      "name": "Watcher-Authorization",
       "in": "header"
     }
   },
