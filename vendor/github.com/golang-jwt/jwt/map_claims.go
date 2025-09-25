@@ -2,119 +2,108 @@ package jwt
 
 import (
 	"encoding/json"
-	"errors"
-	// "fmt"
+	"fmt"
 )
 
-// Claims type that uses the map[string]interface{} for JSON decoding
-// This is the default claims type if you don't supply one
+// MapClaims is a claims type that uses the map[string]interface{} for JSON
+// decoding. This is the default claims type if you don't supply one
 type MapClaims map[string]interface{}
 
-// VerifyAudience Compares the aud claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (m MapClaims) VerifyAudience(cmp string, req bool) bool {
-	var aud []string
-	switch v := m["aud"].(type) {
+// GetExpirationTime implements the Claims interface.
+func (m MapClaims) GetExpirationTime() (*NumericDate, error) {
+	return m.parseNumericDate("exp")
+}
+
+// GetNotBefore implements the Claims interface.
+func (m MapClaims) GetNotBefore() (*NumericDate, error) {
+	return m.parseNumericDate("nbf")
+}
+
+// GetIssuedAt implements the Claims interface.
+func (m MapClaims) GetIssuedAt() (*NumericDate, error) {
+	return m.parseNumericDate("iat")
+}
+
+// GetAudience implements the Claims interface.
+func (m MapClaims) GetAudience() (ClaimStrings, error) {
+	return m.parseClaimsString("aud")
+}
+
+// GetIssuer implements the Claims interface.
+func (m MapClaims) GetIssuer() (string, error) {
+	return m.parseString("iss")
+}
+
+// GetSubject implements the Claims interface.
+func (m MapClaims) GetSubject() (string, error) {
+	return m.parseString("sub")
+}
+
+// parseNumericDate tries to parse a key in the map claims type as a number
+// date. This will succeed, if the underlying type is either a [float64] or a
+// [json.Number]. Otherwise, nil will be returned.
+func (m MapClaims) parseNumericDate(key string) (*NumericDate, error) {
+	v, ok := m[key]
+	if !ok {
+		return nil, nil
+	}
+
+	switch exp := v.(type) {
+	case float64:
+		if exp == 0 {
+			return nil, nil
+		}
+
+		return newNumericDateFromSeconds(exp), nil
+	case json.Number:
+		v, _ := exp.Float64()
+
+		return newNumericDateFromSeconds(v), nil
+	}
+
+	return nil, newError(fmt.Sprintf("%s is invalid", key), ErrInvalidType)
+}
+
+// parseClaimsString tries to parse a key in the map claims type as a
+// [ClaimsStrings] type, which can either be a string or an array of string.
+func (m MapClaims) parseClaimsString(key string) (ClaimStrings, error) {
+	var cs []string
+	switch v := m[key].(type) {
 	case string:
-		aud = append(aud, v)
+		cs = append(cs, v)
 	case []string:
-		aud = v
+		cs = v
 	case []interface{}:
 		for _, a := range v {
 			vs, ok := a.(string)
 			if !ok {
-				return false
+				return nil, newError(fmt.Sprintf("%s is invalid", key), ErrInvalidType)
 			}
-			aud = append(aud, vs)
+			cs = append(cs, vs)
 		}
 	}
-	return verifyAud(aud, cmp, req)
+
+	return cs, nil
 }
 
-// Compares the exp claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (m MapClaims) VerifyExpiresAt(cmp int64, req bool) bool {
-	exp, ok := m["exp"]
+// parseString tries to parse a key in the map claims type as a [string] type.
+// If the key does not exist, an empty string is returned. If the key has the
+// wrong type, an error is returned.
+func (m MapClaims) parseString(key string) (string, error) {
+	var (
+		ok  bool
+		raw interface{}
+		iss string
+	)
+	raw, ok = m[key]
 	if !ok {
-		return !req
+		return "", nil
 	}
-	switch expType := exp.(type) {
-	case float64:
-		return verifyExp(int64(expType), cmp, req)
-	case json.Number:
-		v, _ := expType.Int64()
-		return verifyExp(v, cmp, req)
-	}
-	return false
-}
 
-// Compares the iat claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (m MapClaims) VerifyIssuedAt(cmp int64, req bool) bool {
-	iat, ok := m["iat"]
+	iss, ok = raw.(string)
 	if !ok {
-		return !req
-	}
-	switch iatType := iat.(type) {
-	case float64:
-		return verifyIat(int64(iatType), cmp, req)
-	case json.Number:
-		v, _ := iatType.Int64()
-		return verifyIat(v, cmp, req)
-	}
-	return false
-}
-
-// Compares the iss claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (m MapClaims) VerifyIssuer(cmp string, req bool) bool {
-	iss, _ := m["iss"].(string)
-	return verifyIss(iss, cmp, req)
-}
-
-// Compares the nbf claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
-	nbf, ok := m["nbf"]
-	if !ok {
-		return !req
-	}
-	switch nbfType := nbf.(type) {
-	case float64:
-		return verifyNbf(int64(nbfType), cmp, req)
-	case json.Number:
-		v, _ := nbfType.Int64()
-		return verifyNbf(v, cmp, req)
-	}
-	return false
-}
-
-// Validates time based claims "exp, iat, nbf".
-// There is no accounting for clock skew.
-// As well, if any of the above claims are not in the token, it will still
-// be considered a valid claim.
-func (m MapClaims) Valid() error {
-	vErr := new(ValidationError)
-	now := TimeFunc().Unix()
-
-	if !m.VerifyExpiresAt(now, false) {
-		vErr.Inner = errors.New("Token is expired")
-		vErr.Errors |= ValidationErrorExpired
+		return "", newError(fmt.Sprintf("%s is invalid", key), ErrInvalidType)
 	}
 
-	if !m.VerifyIssuedAt(now, false) {
-		vErr.Inner = errors.New("Token used before issued")
-		vErr.Errors |= ValidationErrorIssuedAt
-	}
-
-	if !m.VerifyNotBefore(now, false) {
-		vErr.Inner = errors.New("Token is not valid yet")
-		vErr.Errors |= ValidationErrorNotValidYet
-	}
-
-	if vErr.valid() {
-		return nil
-	}
-
-	return vErr
+	return iss, nil
 }
