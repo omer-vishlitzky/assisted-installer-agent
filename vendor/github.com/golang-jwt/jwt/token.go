@@ -1,40 +1,50 @@
 package jwt
 
 import (
+	"crypto"
 	"encoding/base64"
 	"encoding/json"
-	"strings"
-	"time"
 )
 
-// TimeFunc provides the current time when parsing token to validate "exp" claim (expiration time).
-// You can override it to use another time value.  This is useful for testing or if your
-// server uses a different time zone than your tokens.
-var TimeFunc = time.Now
-
-// Parse methods use this callback function to supply
-// the key for verification.  The function receives the parsed,
-// but unverified Token.  This allows you to use properties in the
-// Header of the token (such as `kid`) to identify which key to use.
+// Keyfunc will be used by the Parse methods as a callback function to supply
+// the key for verification.  The function receives the parsed, but unverified
+// Token.  This allows you to use properties in the Header of the token (such as
+// `kid`) to identify which key to use.
+//
+// The returned interface{} may be a single key or a VerificationKeySet containing
+// multiple keys.
 type Keyfunc func(*Token) (interface{}, error)
 
-// A JWT Token.  Different fields will be used depending on whether you're
-// creating or parsing/verifying a token.
+// VerificationKey represents a public or secret key for verifying a token's signature.
+type VerificationKey interface {
+	crypto.PublicKey | []uint8
+}
+
+// VerificationKeySet is a set of public or secret keys. It is used by the parser to verify a token.
+type VerificationKeySet struct {
+	Keys []VerificationKey
+}
+
+// Token represents a JWT Token.  Different fields will be used depending on
+// whether you're creating or parsing/verifying a token.
 type Token struct {
-	Raw       string                 // The raw token.  Populated when you Parse a token
-	Method    SigningMethod          // The signing method used or to be used
-	Header    map[string]interface{} // The first segment of the token
-	Claims    Claims                 // The second segment of the token
-	Signature string                 // The third segment of the token.  Populated when you Parse a token
-	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
+	Raw       string                 // Raw contains the raw token.  Populated when you [Parse] a token
+	Method    SigningMethod          // Method is the signing method used or to be used
+	Header    map[string]interface{} // Header is the first segment of the token in decoded form
+	Claims    Claims                 // Claims is the second segment of the token in decoded form
+	Signature []byte                 // Signature is the third segment of the token in decoded form.  Populated when you Parse a token
+	Valid     bool                   // Valid specifies if the token is valid.  Populated when you Parse/Verify a token
 }
 
-// Create a new Token.  Takes a signing method
-func New(method SigningMethod) *Token {
-	return NewWithClaims(method, MapClaims{})
+// New creates a new [Token] with the specified signing method and an empty map
+// of claims. Additional options can be specified, but are currently unused.
+func New(method SigningMethod, opts ...TokenOption) *Token {
+	return NewWithClaims(method, MapClaims{}, opts...)
 }
 
-func NewWithClaims(method SigningMethod, claims Claims) *Token {
+// NewWithClaims creates a new [Token] with the specified signing method and
+// claims. Additional options can be specified, but are currently unused.
+func NewWithClaims(method SigningMethod, claims Claims, opts ...TokenOption) *Token {
 	return &Token{
 		Header: map[string]interface{}{
 			"typ": "JWT",
@@ -45,60 +55,46 @@ func NewWithClaims(method SigningMethod, claims Claims) *Token {
 	}
 }
 
-// Get the complete, signed token
+// SignedString creates and returns a complete, signed JWT. The token is signed
+// using the SigningMethod specified in the token. Please refer to
+// https://golang-jwt.github.io/jwt/usage/signing_methods/#signing-methods-and-key-types
+// for an overview of the different signing methods and their respective key
+// types.
 func (t *Token) SignedString(key interface{}) (string, error) {
-	var sig, sstr string
-	var err error
-	if sstr, err = t.SigningString(); err != nil {
+	sstr, err := t.SigningString()
+	if err != nil {
 		return "", err
 	}
-	if sig, err = t.Method.Sign(sstr, key); err != nil {
+
+	sig, err := t.Method.Sign(sstr, key)
+	if err != nil {
 		return "", err
 	}
-	return strings.Join([]string{sstr, sig}, "."), nil
+
+	return sstr + "." + t.EncodeSegment(sig), nil
 }
 
-// Generate the signing string.  This is the
-// most expensive part of the whole deal.  Unless you
-// need this for something special, just go straight for
-// the SignedString.
+// SigningString generates the signing string.  This is the most expensive part
+// of the whole deal. Unless you need this for something special, just go
+// straight for the SignedString.
 func (t *Token) SigningString() (string, error) {
-	var err error
-	parts := make([]string, 2)
-	for i := range parts {
-		var jsonValue []byte
-		if i == 0 {
-			if jsonValue, err = json.Marshal(t.Header); err != nil {
-				return "", err
-			}
-		} else {
-			if jsonValue, err = json.Marshal(t.Claims); err != nil {
-				return "", err
-			}
-		}
-
-		parts[i] = EncodeSegment(jsonValue)
+	h, err := json.Marshal(t.Header)
+	if err != nil {
+		return "", err
 	}
-	return strings.Join(parts, "."), nil
+
+	c, err := json.Marshal(t.Claims)
+	if err != nil {
+		return "", err
+	}
+
+	return t.EncodeSegment(h) + "." + t.EncodeSegment(c), nil
 }
 
-// Parse, validate, and return a token.
-// keyFunc will receive the parsed token and should return the key for validating.
-// If everything is kosher, err will be nil
-func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
-	return new(Parser).Parse(tokenString, keyFunc)
-}
-
-func ParseWithClaims(tokenString string, claims Claims, keyFunc Keyfunc) (*Token, error) {
-	return new(Parser).ParseWithClaims(tokenString, claims, keyFunc)
-}
-
-// Encode JWT specific base64url encoding with padding stripped
-func EncodeSegment(seg []byte) string {
+// EncodeSegment encodes a JWT specific base64url encoding with padding
+// stripped. In the future, this function might take into account a
+// [TokenOption]. Therefore, this function exists as a method of [Token], rather
+// than a global function.
+func (*Token) EncodeSegment(seg []byte) string {
 	return base64.RawURLEncoding.EncodeToString(seg)
-}
-
-// Decode JWT specific base64url encoding with padding stripped
-func DecodeSegment(seg string) ([]byte, error) {
-	return base64.RawURLEncoding.DecodeString(seg)
 }

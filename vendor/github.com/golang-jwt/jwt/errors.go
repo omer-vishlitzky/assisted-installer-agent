@@ -2,58 +2,48 @@ package jwt
 
 import (
 	"errors"
+	"strings"
 )
 
-// Error constants
 var (
-	ErrInvalidKey      = errors.New("key is invalid")
-	ErrInvalidKeyType  = errors.New("key is of invalid type")
-	ErrHashUnavailable = errors.New("the requested hash function is unavailable")
+	ErrInvalidKey                = errors.New("key is invalid")
+	ErrInvalidKeyType            = errors.New("key is of invalid type")
+	ErrHashUnavailable           = errors.New("the requested hash function is unavailable")
+	ErrTokenMalformed            = errors.New("token is malformed")
+	ErrTokenUnverifiable         = errors.New("token is unverifiable")
+	ErrTokenSignatureInvalid     = errors.New("token signature is invalid")
+	ErrTokenRequiredClaimMissing = errors.New("token is missing required claim")
+	ErrTokenInvalidAudience      = errors.New("token has invalid audience")
+	ErrTokenExpired              = errors.New("token is expired")
+	ErrTokenUsedBeforeIssued     = errors.New("token used before issued")
+	ErrTokenInvalidIssuer        = errors.New("token has invalid issuer")
+	ErrTokenInvalidSubject       = errors.New("token has invalid subject")
+	ErrTokenNotValidYet          = errors.New("token is not valid yet")
+	ErrTokenInvalidId            = errors.New("token has invalid id")
+	ErrTokenInvalidClaims        = errors.New("token has invalid claims")
+	ErrInvalidType               = errors.New("invalid type for claim")
 )
 
-// The errors that might occur when parsing and validating a token
-const (
-	ValidationErrorMalformed        uint32 = 1 << iota // Token is malformed
-	ValidationErrorUnverifiable                        // Token could not be verified because of signing problems
-	ValidationErrorSignatureInvalid                    // Signature validation failed
+// joinedError is an error type that works similar to what [errors.Join]
+// produces, with the exception that it has a nice error string; mainly its
+// error messages are concatenated using a comma, rather than a newline.
+type joinedError struct {
+	errs []error
+}
 
-	// Standard Claim validation errors
-	ValidationErrorAudience      // AUD validation failed
-	ValidationErrorExpired       // EXP validation failed
-	ValidationErrorIssuedAt      // IAT validation failed
-	ValidationErrorIssuer        // ISS validation failed
-	ValidationErrorNotValidYet   // NBF validation failed
-	ValidationErrorId            // JTI validation failed
-	ValidationErrorClaimsInvalid // Generic claims validation error
-)
-
-// Helper for constructing a ValidationError with a string error message
-func NewValidationError(errorText string, errorFlags uint32) *ValidationError {
-	return &ValidationError{
-		text:   errorText,
-		Errors: errorFlags,
+func (je joinedError) Error() string {
+	msg := []string{}
+	for _, err := range je.errs {
+		msg = append(msg, err.Error())
 	}
+
+	return strings.Join(msg, ", ")
 }
 
-// The error from Parse if token is not valid
-type ValidationError struct {
-	Inner  error  // stores the error returned by external dependencies, i.e.: KeyFunc
-	Errors uint32 // bitfield.  see ValidationError... constants
-	text   string // errors that do not have a valid error just have text
-}
-
-// Validation error is an error type
-func (e ValidationError) Error() string {
-	if e.Inner != nil {
-		return e.Inner.Error()
-	} else if e.text != "" {
-		return e.text
-	} else {
-		return "token is invalid"
+// joinErrors joins together multiple errors. Useful for scenarios where
+// multiple errors next to each other occur, e.g., in claims validation.
+func joinErrors(errs ...error) error {
+	return &joinedError{
+		errs: errs,
 	}
-}
-
-// No errors
-func (e *ValidationError) valid() bool {
-	return e.Errors == 0
 }
