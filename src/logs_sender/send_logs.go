@@ -339,8 +339,8 @@ func uploadLogs(l LogsSender, inputPath string, archivePath string) error {
 	_, errOut, execCode := l.Execute("tar", args...)
 
 	if execCode != 0 {
-		log.WithError(errors.Errorf(errOut)).Errorf("Failed to run to archive %s.", inputPath)
-		return fmt.Errorf(errOut)
+		log.WithError(errors.New(errOut)).Errorf("Failed to run to archive %s.", inputPath)
+		return errors.New(errOut)
 	}
 
 	err := l.FileUploader(archivePath)
