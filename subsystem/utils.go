@@ -287,7 +287,7 @@ func addRegisterStub(hostID string, reply int, infraEnvID string) (string, error
 		errorReply := &models.Error{
 			Code:   swag.String(fmt.Sprintf("%d", reply)),
 			Href:   swag.String(""),
-			ID:     swag.Int32(int32(reply)), //nolint: gosec
+			ID:     swag.Int32(int32(reply)), // #nosec G115 - reply is HTTP status code, always fits in int32 //nolint: gosec
 			Kind:   swag.String("Error"),
 			Reason: swag.String(fmt.Sprintf("%d", reply)),
 		}

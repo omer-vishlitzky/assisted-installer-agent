@@ -91,8 +91,8 @@ func getIPRoutes(h handler) ([]*models.Route, error) {
 			Interface:   linkName,
 			Destination: dst,
 			Gateway:     gw,
-			Family:      int32(h.getFamily()), //nolint: gosec
-			Metric:      int32(r.Priority),    //nolint: gosec
+			Family:      int32(h.getFamily()), // #nosec G115 - address family is unix.AF_INET (2) or unix.AF_INET6 (10), always fits in int32
+			Metric:      int32(r.Priority),    // #nosec G115 - Linux route priorities are 32-bit values, safe conversion
 		})
 	}
 	return routes, nil

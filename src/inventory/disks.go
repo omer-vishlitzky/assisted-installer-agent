@@ -478,7 +478,7 @@ func (d *disks) getDisks() []*models.Disk {
 			Path:                    path,
 			DriveType:               d.getDriveType(disk),
 			Serial:                  unknownToEmpty(disk.SerialNumber),
-			SizeBytes:               int64(disk.SizeBytes), //nolint: gosec
+			SizeBytes:               int64(disk.SizeBytes), // #nosec G115 - disk sizes up to 8 exabytes fit in int64, current max drives are ~30TB
 			Vendor:                  unknownToEmpty(disk.Vendor),
 			Wwn:                     getPureWWN(disk.WWN, diskPath2diskWWN[path]),
 			Bootable:                d.getBootable(path),
