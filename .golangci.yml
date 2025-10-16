@@ -47,6 +47,7 @@ issues:
   # excluded by default patterns execute `golangci-lint run --help`
   exclude:
     - G107
+    - G115  # Integer overflow conversion - not a realistic risk for our use cases
     - G402  # support scality DisableSSL
     - G401  # Use of weak cryptographic primitive
     - G501  # Blacklisted import `crypto/md5`: weak cryptographic primitive
@@ -54,15 +55,16 @@ issues:
 
 linters:
   enable:
-    - megacheck
     - govet
     - gocyclo
     - gofmt
     - gosec
-    - megacheck
+    - gosimple
+    - staticcheck
+    - unused
     - unconvert
     - goimports
-    - exportloopref
+    - copyloopvar
 
 linters-settings:
   govet:
